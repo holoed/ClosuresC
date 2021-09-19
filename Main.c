@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <string.h>
 
 enum Tag {Int, Double, Char, String };
 union Value { int v_1; double v_2; char v_3; char* v_4; };
@@ -46,13 +47,37 @@ struct BoxedValue* mkInt(int x) {
    return mkBoxedValue(Int, v);
 }
 
+struct BoxedValue* mkString(char* x) {
+   union Value v;
+   v.v_4 = x;
+   return mkBoxedValue(String, v);
+}
+
 struct BoxedValue* add(struct BoxedValue* env[], struct BoxedValue* y) {
    return mkInt(getEnv(env, 0)->value.v_1 + y->value.v_1);
 }
 
+struct BoxedValue* concat(struct BoxedValue* env[], struct BoxedValue* y) {
+   char* s1 = getEnv(env, 0)->value.v_4;
+   char* s2 = y->value.v_4;
+   int size = strlen(s1) + strlen(s2) + 1;
+   char d[size]; 
+   strcat (strcpy(d, s1), s2);
+   d[size - 1] = '\0';
+   return mkString(d);
+}
+
 int main() {
-   struct closure * c = setEnv(mkClosure(&add), 0, mkInt(3));
-   struct BoxedValue* ret = applyClosure(c, mkInt(2));
-   printf("result is %d\n", ret->value.v_1);
+   struct closure * c1 = setEnv(mkClosure(&add), 0, mkInt(3));
+   struct BoxedValue* ret1 = applyClosure(c1, mkInt(2));
+   printf("result is %d\n", ret1->value.v_1);
+
+   struct closure * c2 = setEnv(mkClosure(&concat), 0, mkString("Hello "));
+   struct BoxedValue* ret2 = applyClosure(c2, mkString("World"));
+   char* s = ret2->value.v_4;
+   for (int i = 0; i < 12; i++) {
+       printf("%c", s[i]);
+   }
+   printf("\n");
    return 0;
 }
