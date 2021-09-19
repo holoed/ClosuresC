@@ -12,11 +12,21 @@ struct closure {
    struct BoxedValue** env;
 };
 
-struct closure* mkClosure(void* f, struct BoxedValue** arg) {
+struct closure* mkClosure(void* f) {
    struct closure * c = (struct closure *)malloc(sizeof(struct closure));
-   c->env = arg;
    c->fn = f;
    return c;
+}
+
+struct closure* setEnv(struct closure* c, int i, struct BoxedValue* v) {
+   static struct BoxedValue* args[1]; 
+   args[0] = v;
+   c->env = args;
+   return c;
+}
+
+struct BoxedValue* getEnv(struct BoxedValue* env[], int i) {
+   return env[i];
 }
 
 struct BoxedValue* mkBoxedValue(enum Tag tag, union Value value) {
@@ -37,17 +47,12 @@ struct BoxedValue* mkInt(int x) {
 }
 
 struct BoxedValue* add(struct BoxedValue* env[], struct BoxedValue* y) {
-   return mkInt(env[0]->value.v_1 + y->value.v_1);
-}
-
-struct BoxedValue** singleton(struct BoxedValue* arg) {
-   static struct BoxedValue* args[1]; 
-   args[0] = arg;
-   return args;  
+   return mkInt(getEnv(env, 0)->value.v_1 + y->value.v_1);
 }
 
 int main() {
-   struct closure * c = mkClosure(&add, singleton(mkInt(3)));
+   struct closure * c = setEnv(mkClosure(&add), 0, mkInt(3));
    struct BoxedValue* ret = applyClosure(c, mkInt(2));
    printf("result is %d\n", ret->value.v_1);
+   return 0;
 }
