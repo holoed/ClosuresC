@@ -39,7 +39,7 @@ struct BoxedValue* mkBoxedValue(enum Tag tag, union Value value) {
 }
 
 struct BoxedValue* applyClosure(struct closure * c, struct BoxedValue* arg) {
-   return ((struct BoxedValue* (*)(struct BoxedValue*, struct BoxedValue*))c->fn)(c->env, arg);
+   return ((struct BoxedValue* (*)(struct BoxedValue**, struct BoxedValue*))c->fn)(c->env, arg);
 }
 
 struct BoxedValue* mkInt(int x) {
