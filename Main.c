@@ -61,7 +61,7 @@ struct BoxedValue* concat(struct BoxedValue* env[], struct BoxedValue* y) {
    char* s1 = getEnv(env, 0)->value.v_4;
    char* s2 = y->value.v_4;
    int size = strlen(s1) + strlen(s2) + 1;
-   char d[size]; 
+   char* d = malloc(sizeof(char) * size); 
    strcat (strcpy(d, s1), s2);
    d[size - 1] = '\0';
    return mkString(d);
@@ -70,14 +70,11 @@ struct BoxedValue* concat(struct BoxedValue* env[], struct BoxedValue* y) {
 int main() {
    struct closure * c1 = setEnv(mkClosure(&add), 0, mkInt(3));
    struct BoxedValue* ret1 = applyClosure(c1, mkInt(2));
-   printf("result is %d\n", ret1->value.v_1);
+   printf("%d\n", ret1->value.v_1);
 
    struct closure * c2 = setEnv(mkClosure(&concat), 0, mkString("Hello "));
    struct BoxedValue* ret2 = applyClosure(c2, mkString("World"));
    char* s = ret2->value.v_4;
-   for (int i = 0; i < 12; i++) {
-       printf("%c", s[i]);
-   }
-   printf("\n");
+   printf("%s\n", s);
    return 0;
 }
