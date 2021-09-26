@@ -14,6 +14,9 @@ struct BoxedValue {
     union Value value;
 };
 
+struct BoxedValue* numInt;
+struct BoxedValue* numDouble;
+
 struct closure* mkClosure(void* f) {
    struct closure * c = (struct closure *)malloc(sizeof(struct closure));
    c->fn = f;
@@ -107,20 +110,25 @@ struct closure * fromInteger(struct BoxedValue* inst) {
 }
 
 void fromIntegerExample1() {
-   struct BoxedValue* numInt = mkFn(&numIntGet);
    struct closure * c0 = fromInteger(numInt);
    struct BoxedValue* ret0 = applyClosure(c0, mkInt(4));
    printf("%d\n", ret0->value.v_1);
 }
 
 void fromIntegerExample2() {
-   struct BoxedValue* numDouble = mkFn(&numDoubleGet);
    struct closure * c0 = fromInteger(numDouble);
    struct BoxedValue* ret0 = applyClosure(c0, mkInt(4));
    printf("%f\n", ret0->value.v_2);
 }
 
+
+void init() {
+   numInt = mkFn(&numIntGet);
+   numDouble = mkFn(&numDoubleGet);
+}
+
 int main() {
+   init();
    fromIntegerExample1();
    fromIntegerExample2();
 
