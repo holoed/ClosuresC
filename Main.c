@@ -16,6 +16,7 @@ struct BoxedValue {
 
 struct BoxedValue* numInt;
 struct BoxedValue* numDouble;
+struct BoxedValue* fromInteger;
 
 struct closure* mkClosure(void* f) {
    struct closure * c = (struct closure *)malloc(sizeof(struct closure));
@@ -41,8 +42,9 @@ struct BoxedValue* mkBoxedValue(enum Tag tag, union Value value) {
    return v;
 }
 
-struct BoxedValue* applyClosure(struct closure * c, struct BoxedValue* arg) {
-   return ((struct BoxedValue* (*)(struct BoxedValue**, struct BoxedValue*))c->fn)(c->env, arg);
+struct BoxedValue* applyClosure(struct BoxedValue* fn, struct BoxedValue* x) {
+   struct closure * c = (struct closure *)fn->value.fn;
+   return ((struct BoxedValue* (*)(struct BoxedValue**, struct BoxedValue*))c->fn)(c->env, x);
 }
 
 struct BoxedValue* mkInt(int x) {
@@ -99,24 +101,24 @@ struct BoxedValue* numDoubleGet(char* s) {
    return mkFn(&fromIntegerDouble);
 }
 
-struct BoxedValue* fromInt(struct BoxedValue* env[], struct BoxedValue* y) {
+struct BoxedValue* fromInt_part2(struct BoxedValue* env[], struct BoxedValue* x) {
    void* fn = getEnv(env, 0)->value.fn;
    void* fn2 = (((struct BoxedValue* (*)(char*))fn)("fromInteger"))->value.fn;
-   return ((struct BoxedValue* (*)(struct BoxedValue *))fn2)(y);
+   return ((struct BoxedValue* (*)(struct BoxedValue *))fn2)(x);
 }
 
-struct closure * fromInteger(struct BoxedValue* inst) {
-   return setEnv(mkClosure(&fromInt), 0, inst);
+struct BoxedValue* fromInt_part1(struct BoxedValue* env[], struct BoxedValue* inst) {
+   return mkFn(setEnv(mkClosure(&fromInt_part2), 0, inst));
 }
 
 void fromIntegerExample1() {
-   struct closure * c0 = fromInteger(numInt);
+   struct BoxedValue* c0 = applyClosure(fromInteger, numInt);
    struct BoxedValue* ret0 = applyClosure(c0, mkInt(4));
    printf("%d\n", ret0->value.v_1);
 }
 
 void fromIntegerExample2() {
-   struct closure * c0 = fromInteger(numDouble);
+   struct BoxedValue* c0 = applyClosure(fromInteger, numDouble);
    struct BoxedValue* ret0 = applyClosure(c0, mkInt(4));
    printf("%f\n", ret0->value.v_2);
 }
@@ -125,6 +127,7 @@ void fromIntegerExample2() {
 void init() {
    numInt = mkFn(&numIntGet);
    numDouble = mkFn(&numDoubleGet);
+   fromInteger = mkFn(mkClosure(&fromInt_part1));
 }
 
 int main() {
@@ -132,11 +135,11 @@ int main() {
    fromIntegerExample1();
    fromIntegerExample2();
 
-   struct closure * c1 = setEnv(mkClosure(&add), 0, mkInt(3));
+   struct BoxedValue* c1 = mkFn(setEnv(mkClosure(&add), 0, mkInt(3)));
    struct BoxedValue* ret1 = applyClosure(c1, mkInt(2));
    printf("%d\n", ret1->value.v_1);
 
-   struct closure * c2 = setEnv(mkClosure(&concat), 0, mkString("Hello "));
+   struct BoxedValue* c2 = mkFn(setEnv(mkClosure(&concat), 0, mkString("Hello ")));
    struct BoxedValue* ret2 = applyClosure(c2, mkString("World"));
    char* s = ret2->value.v_4;
    printf("%s\n", s);
