@@ -17,6 +17,7 @@ struct BoxedValue {
 struct BoxedValue* numInt;
 struct BoxedValue* numDouble;
 struct BoxedValue* fromInteger;
+struct BoxedValue* __add;
 
 struct closure* mkClosure(void* f) {
    struct closure * c = (struct closure *)malloc(sizeof(struct closure));
@@ -25,10 +26,20 @@ struct closure* mkClosure(void* f) {
 }
 
 struct closure* setEnv(struct closure* c, int i, struct BoxedValue* v) {
-   static struct BoxedValue* args[1]; 
-   args[0] = v;
-   c->env = args;
-   return c;
+   if (c->env != 0 && c->env[0] != 0) {
+      int size = sizeof(c->env) / sizeof(struct BoxedValue*);
+      struct BoxedValue** args = (struct BoxedValue**)malloc((size + 1) * sizeof(struct BoxedValue*));
+      memcpy(args, c->env, sizeof(c->env));
+      args[size] = v;
+      c->env = args;
+      return c;
+   }
+   else {
+      static struct BoxedValue* args[1]; 
+      args[0] = v;
+      c->env = args;
+      return c;
+   }
 }
 
 struct BoxedValue* getEnv(struct BoxedValue* env[], int i) {
@@ -71,22 +82,12 @@ struct BoxedValue* mkFn(void* x) {
    return mkBoxedValue(Closure, v);
 }
 
-struct BoxedValue* add(struct BoxedValue* env[], struct BoxedValue* y) {
-   return mkInt(getEnv(env, 0)->value.v_1 + y->value.v_1);
-}
-
-struct BoxedValue* concat(struct BoxedValue* env[], struct BoxedValue* y) {
-   char* s1 = getEnv(env, 0)->value.v_4;
-   char* s2 = y->value.v_4;
-   int size = strlen(s1) + strlen(s2) + 1;
-   char* d = malloc(sizeof(char) * size); 
-   strcat (strcpy(d, s1), s2);
-   d[size - 1] = '\0';
-   return mkString(d);
-}
-
 struct BoxedValue* fromIntegerInt(struct BoxedValue* x) {
    return x;
+}
+
+struct BoxedValue* __plus(struct BoxedValue* x, struct BoxedValue* y){
+   return mkInt(x->value.v_1 + y->value.v_1);
 }
 
 struct BoxedValue* fromIntegerDouble(struct BoxedValue* x) {
@@ -94,11 +95,12 @@ struct BoxedValue* fromIntegerDouble(struct BoxedValue* x) {
 }
 
 struct BoxedValue* numIntGet(char* s) {
-   return mkFn(&fromIntegerInt);
+   if (s == "fromInteger") return mkFn(&fromIntegerInt);
+   if (s == "+") return mkFn(&__plus);
 }
 
 struct BoxedValue* numDoubleGet(char* s) {
-   return mkFn(&fromIntegerDouble);
+   if (s == "fromInteger") return mkFn(&fromIntegerDouble);
 }
 
 struct BoxedValue* fromInt_part2(struct BoxedValue* env[], struct BoxedValue* x) {
@@ -111,37 +113,59 @@ struct BoxedValue* fromInt_part1(struct BoxedValue* env[], struct BoxedValue* in
    return mkFn(setEnv(mkClosure(&fromInt_part2), 0, inst));
 }
 
+struct BoxedValue* __add_part3(struct BoxedValue* env[], struct BoxedValue* y) {
+   void* fn = getEnv(env, 0)->value.fn;
+   void* fn2 = (((struct BoxedValue* (*)(char*))fn)("+"))->value.fn;
+   struct BoxedValue* x = getEnv(env, 1);
+   return ((struct BoxedValue* (*)(struct BoxedValue*, struct BoxedValue*))fn2)(x, y);
+}
+
+struct BoxedValue* __add_part2(struct BoxedValue* env[], struct BoxedValue* x) {
+   return mkFn(setEnv(setEnv(mkClosure(&__add_part3), 0, getEnv(env, 0)), 1, x));
+}
+
+struct BoxedValue* __add_part1(struct BoxedValue* env[], struct BoxedValue* inst) {
+   return mkFn(setEnv(mkClosure(&__add_part2), 0, inst));
+}
+
 void fromIntegerExample1() {
-   struct BoxedValue* c0 = applyClosure(fromInteger, numInt);
-   struct BoxedValue* ret0 = applyClosure(c0, mkInt(4));
-   printf("%d\n", ret0->value.v_1);
+   struct BoxedValue* anf_0 = applyClosure(fromInteger, numInt);
+   struct BoxedValue* anf_1 = mkInt(4);
+   struct BoxedValue* anf_2 = applyClosure(anf_0, anf_1);
+   printf("%d\n", anf_2->value.v_1);
 }
 
 void fromIntegerExample2() {
-   struct BoxedValue* c0 = applyClosure(fromInteger, numDouble);
-   struct BoxedValue* ret0 = applyClosure(c0, mkInt(4));
-   printf("%f\n", ret0->value.v_2);
+   struct BoxedValue* anf_0 = applyClosure(fromInteger, numDouble);
+   struct BoxedValue* anf_1 = mkInt(4);
+   struct BoxedValue* anf_2 = applyClosure(anf_0, anf_1);
+   printf("%f\n", anf_2->value.v_2);
 }
 
+void plusExample() {
+   struct BoxedValue* anf_2 = applyClosure(__add, numInt);
+   struct BoxedValue* anf_0 = applyClosure(fromInteger, numInt);
+   struct BoxedValue* anf_1 = mkInt(1);
+   struct BoxedValue* anf_3 = applyClosure(anf_0, anf_1);
+   struct BoxedValue* anf_6 = applyClosure(anf_2, anf_3);
+   struct BoxedValue* anf_4 = applyClosure(fromInteger, numInt);
+   struct BoxedValue* anf_5 = mkInt(2);
+   struct BoxedValue* anf_7 = applyClosure(anf_4, anf_5);
+   struct BoxedValue* anf_8 = applyClosure(anf_6, anf_7);
+   printf("%d\n", anf_8->value.v_1);
+}
 
 void init() {
    numInt = mkFn(&numIntGet);
    numDouble = mkFn(&numDoubleGet);
    fromInteger = mkFn(mkClosure(&fromInt_part1));
+   __add = mkFn(mkClosure(&__add_part1));
 }
 
 int main() {
    init();
    fromIntegerExample1();
    fromIntegerExample2();
-
-   struct BoxedValue* c1 = mkFn(setEnv(mkClosure(&add), 0, mkInt(3)));
-   struct BoxedValue* ret1 = applyClosure(c1, mkInt(2));
-   printf("%d\n", ret1->value.v_1);
-
-   struct BoxedValue* c2 = mkFn(setEnv(mkClosure(&concat), 0, mkString("Hello ")));
-   struct BoxedValue* ret2 = applyClosure(c2, mkString("World"));
-   char* s = ret2->value.v_4;
-   printf("%s\n", s);
+   plusExample();
    return 0;
 }
