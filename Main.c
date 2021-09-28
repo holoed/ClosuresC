@@ -19,6 +19,7 @@ struct BoxedValue* numInt;
 struct BoxedValue* numDouble;
 struct BoxedValue* fromInteger;
 struct BoxedValue* __add;
+struct BoxedValue* __mul;
 struct BoxedValue* __eqeq;
 
 struct closure* mkClosure(void* f) {
@@ -99,6 +100,10 @@ struct BoxedValue* __plus(struct BoxedValue* x, struct BoxedValue* y){
    return mkInt(x->value.v_1 + y->value.v_1);
 }
 
+struct BoxedValue* __star(struct BoxedValue* x, struct BoxedValue* y){
+   return mkInt(x->value.v_1 * y->value.v_1);
+}
+
 struct BoxedValue* __equals(struct BoxedValue* x, struct BoxedValue* y){
    return mkBool(x->value.v_1 == y->value.v_1);
 }
@@ -114,6 +119,7 @@ struct BoxedValue* eqIntGet(char* s) {
 struct BoxedValue* numIntGet(char* s) {
    if (s == "fromInteger") return mkFn(&fromIntegerInt);
    if (s == "+") return mkFn(&__plus);
+   if (s == "*") return mkFn(&__star);
 }
 
 struct BoxedValue* numDoubleGet(char* s) {
@@ -143,6 +149,21 @@ struct BoxedValue* __add_part2(struct BoxedValue* env[], struct BoxedValue* x) {
 
 struct BoxedValue* __add_part1(struct BoxedValue* env[], struct BoxedValue* inst) {
    return mkFn(setEnv(mkClosure(&__add_part2), 0, inst));
+}
+
+struct BoxedValue* __mul_part3(struct BoxedValue* env[], struct BoxedValue* y) {
+   void* fn = getEnv(env, 0)->value.fn;
+   void* fn2 = (((struct BoxedValue* (*)(char*))fn)("*"))->value.fn;
+   struct BoxedValue* x = getEnv(env, 1);
+   return ((struct BoxedValue* (*)(struct BoxedValue*, struct BoxedValue*))fn2)(x, y);
+}
+
+struct BoxedValue* __mul_part2(struct BoxedValue* env[], struct BoxedValue* x) {
+   return mkFn(setEnv(setEnv(mkClosure(&__mul_part3), 0, getEnv(env, 0)), 1, x));
+}
+
+struct BoxedValue* __mul_part1(struct BoxedValue* env[], struct BoxedValue* inst) {
+   return mkFn(setEnv(mkClosure(&__mul_part2), 0, inst));
 }
 
 struct BoxedValue* __eqeq_part3(struct BoxedValue* env[], struct BoxedValue* y) {
@@ -187,6 +208,19 @@ void plusExample() {
    printf("%d\n", anf_8->value.v_1);
 }
 
+void mulExample() {
+   struct BoxedValue* anf_2 = applyClosure(__mul, numInt);
+   struct BoxedValue* anf_0 = applyClosure(fromInteger, numInt);
+   struct BoxedValue* anf_1 = mkInt(3);
+   struct BoxedValue* anf_3 = applyClosure(anf_0, anf_1);
+   struct BoxedValue* anf_6 = applyClosure(anf_2, anf_3);
+   struct BoxedValue* anf_4 = applyClosure(fromInteger, numInt);
+   struct BoxedValue* anf_5 = mkInt(2);
+   struct BoxedValue* anf_7 = applyClosure(anf_4, anf_5);
+   struct BoxedValue* anf_8 = applyClosure(anf_6, anf_7);
+   printf("%d\n", anf_8->value.v_1);
+}
+
 void eqeqExample() {
    struct BoxedValue* anf_2 = applyClosure(__eqeq, eqInt);
    struct BoxedValue* anf_0 = applyClosure(fromInteger, numInt);
@@ -206,6 +240,7 @@ void init() {
    numDouble = mkFn(&numDoubleGet);
    fromInteger = mkFn(mkClosure(&fromInt_part1));
    __add = mkFn(mkClosure(&__add_part1));
+   __mul = mkFn(mkClosure(&__mul_part1));
    __eqeq = mkFn(mkClosure(&__eqeq_part1));
 }
 
@@ -214,6 +249,7 @@ int main() {
    fromIntegerExample1();
    fromIntegerExample2();
    plusExample();
+   mulExample();
    eqeqExample();
    return 0;
 }
