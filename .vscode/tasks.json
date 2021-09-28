@@ -7,6 +7,9 @@
             "args": [
                 "-g",
                 "${file}",
+                "${fileDirname}/JuniorLib.c",
+                "-I",
+                "../include",
                 "-o",
                 "${fileDirname}/${fileBasenameNoExtension}"
             ],
