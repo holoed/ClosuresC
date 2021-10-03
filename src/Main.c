@@ -100,7 +100,6 @@ struct BoxedValue* _f0(struct BoxedValue* env[], struct BoxedValue* inst) {
    return mkFn(setEnv(mkClosure(&_f1), 0, inst));
 }
 
-
 void callFunctionExample() {
     struct BoxedValue* f = mkFn(mkClosure(&_f0));
     struct BoxedValue* anf_7 = applyClosure(f, numInt);
