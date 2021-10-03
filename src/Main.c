@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include "JuniorLib.h"
@@ -69,6 +70,19 @@ void subExample() {
    printf("11 - 14 --> %d\n", anf_8->value.v_1);
 }
 
+void ifExample(bool b) {
+    struct BoxedValue* anf_4 = mkBool(b);
+    if (anf_4->value.b) {
+        struct BoxedValue* anf_0 = applyClosure(fromInteger, numInt);
+        struct BoxedValue* anf_1 = mkInt(5);
+        printf("then: %d\n", applyClosure(anf_0, anf_1)->value.v_1);
+    } else {
+        struct BoxedValue* anf_2 = applyClosure(fromInteger, numInt);
+        struct BoxedValue* anf_3 = mkInt(6);
+        printf("else: %d\n", applyClosure(anf_2, anf_3)->value.v_1);
+    }
+}
+
 int main() {
    init();
    fromIntegerExample1();
@@ -77,5 +91,7 @@ int main() {
    subExample();
    mulExample();
    eqeqExample();
+   ifExample(true);
+   ifExample(false);
    return 0;
 }
