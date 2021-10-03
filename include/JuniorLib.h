@@ -23,6 +23,8 @@ struct BoxedValue* __sub;
 struct BoxedValue* __mul;
 struct BoxedValue* __eqeq;
 
+struct closure* mkClosure(void* f);
+
 struct closure* setEnv(struct closure* c, int i, struct BoxedValue* v);
 
 struct BoxedValue* getEnv(struct BoxedValue* env[], int i);

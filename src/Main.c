@@ -4,6 +4,8 @@
 #include <string.h>
 #include "JuniorLib.h"
 
+// Primitive Examples
+
 void fromIntegerExample1() {
    struct BoxedValue* anf_0 = applyClosure(fromInteger, numInt);
    struct BoxedValue* anf_1 = mkInt(4);
@@ -75,23 +77,49 @@ void ifExample(bool b) {
     if (anf_4->value.b) {
         struct BoxedValue* anf_0 = applyClosure(fromInteger, numInt);
         struct BoxedValue* anf_1 = mkInt(5);
-        printf("then: %d\n", applyClosure(anf_0, anf_1)->value.v_1);
+        printf("if True then 5 else 6 --> %d\n", applyClosure(anf_0, anf_1)->value.v_1);
     } else {
         struct BoxedValue* anf_2 = applyClosure(fromInteger, numInt);
         struct BoxedValue* anf_3 = mkInt(6);
-        printf("else: %d\n", applyClosure(anf_2, anf_3)->value.v_1);
+        printf("if False then 5 else 6 --> %d\n", applyClosure(anf_2, anf_3)->value.v_1);
     }
+}
+
+// Example: Calling a function 
+
+struct BoxedValue* _f1(struct BoxedValue* _env[], struct BoxedValue* x) {
+    struct BoxedValue* anf_0 = applyClosure(__add, getEnv(_env, 0));
+    struct BoxedValue* anf_3 = applyClosure(anf_0, x);
+    struct BoxedValue* anf_1 = applyClosure(fromInteger, getEnv(_env, 0));
+    struct BoxedValue* anf_2 = mkInt(1);
+    struct BoxedValue* anf_4 = applyClosure(anf_1, anf_2);
+    return applyClosure(anf_3, anf_4);
+}
+
+struct BoxedValue* _f0(struct BoxedValue* env[], struct BoxedValue* inst) {
+   return mkFn(setEnv(mkClosure(&_f1), 0, inst));
+}
+
+
+void callFunctionExample() {
+    struct BoxedValue* f = mkFn(mkClosure(&_f0));
+    struct BoxedValue* anf_7 = applyClosure(f, numInt);
+    struct BoxedValue* anf_5 = applyClosure(fromInteger, numInt);
+    struct BoxedValue* anf_6 = mkInt(7);
+    struct BoxedValue* anf_8 = applyClosure(anf_5, anf_6);
+    printf("f 7 --> %d\n", applyClosure(anf_7, anf_8)->value.v_1);
 }
 
 int main() {
    init();
    fromIntegerExample1();
    fromIntegerExample2();
-   plusExample();
+   plusExample(); 
    subExample();
    mulExample();
    eqeqExample();
    ifExample(true);
    ifExample(false);
+   callFunctionExample();
    return 0;
 }
