@@ -19,6 +19,7 @@ struct BoxedValue* numInt;
 struct BoxedValue* numDouble;
 struct BoxedValue* fromInteger;
 struct BoxedValue* __add;
+struct BoxedValue* __sub;
 struct BoxedValue* __mul;
 struct BoxedValue* __eqeq;
 
@@ -100,6 +101,10 @@ struct BoxedValue* __plus(struct BoxedValue* x, struct BoxedValue* y){
    return mkInt(x->value.v_1 + y->value.v_1);
 }
 
+struct BoxedValue* __minus(struct BoxedValue* x, struct BoxedValue* y){
+   return mkInt(x->value.v_1 - y->value.v_1);
+}
+
 struct BoxedValue* __star(struct BoxedValue* x, struct BoxedValue* y){
    return mkInt(x->value.v_1 * y->value.v_1);
 }
@@ -119,6 +124,7 @@ struct BoxedValue* eqIntGet(char* s) {
 struct BoxedValue* numIntGet(char* s) {
    if (s == "fromInteger") return mkFn(&fromIntegerInt);
    if (s == "+") return mkFn(&__plus);
+   if (s == "-") return mkFn(&__minus);
    if (s == "*") return mkFn(&__star);
 }
 
@@ -149,6 +155,21 @@ struct BoxedValue* __add_part2(struct BoxedValue* env[], struct BoxedValue* x) {
 
 struct BoxedValue* __add_part1(struct BoxedValue* env[], struct BoxedValue* inst) {
    return mkFn(setEnv(mkClosure(&__add_part2), 0, inst));
+}
+
+struct BoxedValue* __sub_part3(struct BoxedValue* env[], struct BoxedValue* y) {
+   void* fn = getEnv(env, 0)->value.fn;
+   void* fn2 = (((struct BoxedValue* (*)(char*))fn)("-"))->value.fn;
+   struct BoxedValue* x = getEnv(env, 1);
+   return ((struct BoxedValue* (*)(struct BoxedValue*, struct BoxedValue*))fn2)(x, y);
+}
+
+struct BoxedValue* __sub_part2(struct BoxedValue* env[], struct BoxedValue* x) {
+   return mkFn(setEnv(setEnv(mkClosure(&__sub_part3), 0, getEnv(env, 0)), 1, x));
+}
+
+struct BoxedValue* __sub_part1(struct BoxedValue* env[], struct BoxedValue* inst) {
+   return mkFn(setEnv(mkClosure(&__sub_part2), 0, inst));
 }
 
 struct BoxedValue* __mul_part3(struct BoxedValue* env[], struct BoxedValue* y) {
@@ -187,6 +208,7 @@ void init() {
    numDouble = mkFn(&numDoubleGet);
    fromInteger = mkFn(mkClosure(&fromInt_part1));
    __add = mkFn(mkClosure(&__add_part1));
+   __sub = mkFn(mkClosure(&__sub_part1));
    __mul = mkFn(mkClosure(&__mul_part1));
    __eqeq = mkFn(mkClosure(&__eqeq_part1));
 }
