@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "JuniorLib.h"
+#include "FactorialExample.h"
 
 // Primitive Examples
 
@@ -120,5 +121,7 @@ int main() {
    ifExample(true);
    ifExample(false);
    callFunctionExample();
+   struct BoxedValue* ret = factorialExample();
+   printf("fac 5 --> %d\n", ret->value.v_1);
    return 0;
 }
